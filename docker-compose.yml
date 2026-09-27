@@ -1,0 +1,47 @@
+# Neo4j and Postgres stay up for the graph and job log.
+# GROBID is behind the pdf profile because it needs a large JVM:
+#   docker compose --profile pdf up -d
+services:
+  neo4j:
+    image: neo4j:2026.07.1
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/research-dev
+      NEO4J_server_memory_heap_initial__size: 256m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 128m
+    volumes:
+      - neo4j_data:/data
+    mem_limit: 768m
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: research
+      POSTGRES_PASSWORD: research-dev
+      POSTGRES_DB: research
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    mem_limit: 256m
+
+  grobid:
+    image: lfoppiano/grobid:0.8.1
+    profiles: ["pdf"]
+    ports:
+      - "8070:8070"
+    # Java 17 crashes on this Docker host while reading cgroup memory, so
+    # container detection is off and the heap is pinned. Models load on first
+    # use, and the cap is 3g because 2g was OOM-killed on an 8GB machine.
+    environment:
+      JAVA_OPTS: "-XX:-UseContainerSupport -Xms256m -Xmx768m"
+    volumes:
+      - ./docker/grobid.yaml:/opt/grobid/grobid-home/config/grobid.yaml:ro
+    mem_limit: 3g
+
+volumes:
+  neo4j_data:
+  pg_data:
