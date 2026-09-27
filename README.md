@@ -32,7 +32,7 @@ python -m venv .venv
 .venv\Scripts\uvicorn api.main:app --reload --port 8000
 ```
 
-SPECTER2 stays on CPU. Generation never calls a local model server.
+SPECTER2 stays on CPU and is off by default (`EMBED_ON_INGEST=false`). Search uses the graph, not that vector. Generation always goes to Groq over HTTPS.
 
 4. Frontend:
 

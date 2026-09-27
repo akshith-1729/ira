@@ -10,3 +10,4 @@ data/
 .DS_Store
 frontend/.vite/
 *.log
+.tools/

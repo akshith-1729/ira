@@ -12,7 +12,6 @@ from graph.search import (
     catalog_queries,
     fallback_intent,
     intent_terms,
-    merge_intent,
     record_matches_terms,
 )
 from ingestion.ids import classify_id
@@ -108,6 +107,8 @@ async def upload_paper(request: Request, file: UploadFile = File(...)):
     payload = await file.read()
     if len(payload) > MAX_PDF:
         raise HTTPException(status_code=413, detail="PDF exceeds 20MB")
+    if not payload.startswith(b"%PDF"):
+        raise HTTPException(status_code=400, detail="File is not a PDF")
     _require_db(request)
     _require_graph(request)
     job_id = request.app.state.db.create_job("upload")
@@ -174,10 +175,6 @@ def search(body: SearchIn, request: Request):
     _require_graph(request)
     _require_db(request)
     intent = fallback_intent(body.query)
-    try:
-        intent = merge_intent(body.query, request.app.state.llm.interpret_query(body.query))
-    except Exception as exc:
-        log.info("Query interpretation fell back: %s", exc)
     terms = intent_terms(intent, body.query)
     if not terms:
         raise HTTPException(status_code=400, detail="The query has no searchable terms")
@@ -193,7 +190,7 @@ def search(body: SearchIn, request: Request):
     catalog = []
     seen = {row["paper"]["id"] for row in results}
     gates = intent.get("must_match") or terms
-    if request.app.state.settings.openalex_title_search:
+    if request.app.state.settings.openalex_title_search and len(results) < 3:
         try:
             for lookup in catalog_queries(intent, body.query):
                 if len(catalog) >= 5:

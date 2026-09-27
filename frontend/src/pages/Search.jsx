@@ -92,7 +92,7 @@ export default function Search() {
           <h2 className="text-xs uppercase tracking-[0.16em] text-teal">In this graph</h2>
           {local.length === 0 && (
             <p className="mt-3 text-sm text-mute">
-              Nothing ingested here discusses that field. Analyze a catalog paper to put it on the graph.
+              Nothing ingested in this field yet. Analyze a catalog paper to put it on the graph.
             </p>
           )}
           <ResultList rows={local} />

@@ -179,7 +179,7 @@ class OpenAlex:
             raise RuntimeError(f"OpenAlex returned {response.status_code} for {work_id}")
         return response.json()
 
-    def find_by_title(self, title: str, *, min_ratio: float = 0.82) -> dict | None:
+    def find_by_title(self, title: str, *, min_ratio: float = 0.90) -> dict | None:
         """The one metered call in this module. Uploaded preprints cite by title only, and
         without a resolved neighbor there is no topic to diff against, so gap analysis is
         empty. The match is verified against the returned title because a wrong match would
@@ -187,7 +187,7 @@ class OpenAlex:
         if not self.api_key:
             raise RuntimeError("OPENALEX_API_KEY is required for OpenAlex lookups")
         query = _search_value(title)
-        if len(query) < 12:
+        if len(query) < 20:
             return None
         response = self._client.get(
             "https://api.openalex.org/works",

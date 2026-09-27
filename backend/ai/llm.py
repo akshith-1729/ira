@@ -25,6 +25,7 @@ class LLM:
         self._cerebras = None
 
     def _client(self, batch: bool) -> tuple[OpenAI, str]:
+        # Generation always goes to Groq. Cerebras stays wired but unused.
         if batch:
             if not self.settings.cerebras_api_key:
                 raise RuntimeError("CEREBRAS_API_KEY is not set")

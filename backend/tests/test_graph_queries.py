@@ -87,6 +87,7 @@ def test_search_terms_drop_filler_and_expand_cybersecurity():
     assert "technology" not in query_terms("new flaws in web 3.0 technology")
     assert "web3" in query_terms("new flaws in web 3.0 technology")
     assert catalog_query("new flaws in web 3.0 technology") == "web 3.0"
+    assert len(catalog_query("modern flaws in cybersecurity applications and technology").split()) <= 5
     assert "cybersecurity" in query_terms("A project based on modern flaws in cybersecurity")
     assert "security" in query_terms("A project based on modern flaws in cybersecurity")
 

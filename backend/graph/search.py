@@ -143,7 +143,7 @@ def catalog_query(text: str) -> str:
     if re.search(r"web\s*3(?:\.0)?", raw, flags=re.I) or "web3" in raw.lower():
         return "web 3.0"
     terms = query_terms(raw)
-    return " ".join(terms[:6]) or raw[:200]
+    return " ".join(terms[:5]) or raw[:200]
 
 
 def record_matches_terms(record: dict, terms: list[str]) -> bool:
@@ -209,7 +209,7 @@ def merge_intent(text: str, payload: dict | None) -> dict:
         base["methods"] = methods
     if must:
         base["must_match"] = list(dict.fromkeys(must + base["must_match"]))[:6]
-    if catalog and query_terms(catalog) and len(catalog.split()) <= 6:
+    if catalog and query_terms(catalog) and len(catalog.split()) <= 5:
         gates = must or topics or base["must_match"]
         compact = re.sub(r"[^a-z0-9]+", "", catalog.lower())
         if any(re.sub(r"[^a-z0-9]+", "", name.lower()) in compact for name in gates):

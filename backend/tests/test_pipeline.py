@@ -1,4 +1,4 @@
-from jobs.pipeline import Deps, run_lookup
+from jobs.pipeline import Deps, is_parseable_paper, looks_scholarly, run_lookup
 
 
 def _work(wid, title, refs=None):
@@ -140,7 +140,7 @@ def test_lookup_pipeline_keeps_only_graph_gaps(monkeypatch):
     store = _Store()
     db = _DB()
     deps = Deps(
-        settings=type("S", (), {"citation_walk_limit": 25, "local_user_id": "local"})(),
+        settings=type("S", (), {"citation_walk_limit": 25, "local_user_id": "local", "embed_on_ingest": False})(),
         openalex=_OpenAlex(),
         store=store,
         db=db,
@@ -153,3 +153,22 @@ def test_lookup_pipeline_keeps_only_graph_gaps(monkeypatch):
     assert store.written[0]["claims"][0]["chunks"][0]["id"] == "W2:abstract"
     assert store.venue == "S1"
     assert db.states[-1][0] == "done", db.states[-1]
+
+
+def test_story_pdf_without_structure_is_not_parseable():
+    parsed = {"title": "Untitled upload", "abstract": "", "doi": None, "sections": []}
+    assert not is_parseable_paper(parsed, [])
+    assert not looks_scholarly(parsed, [])
+
+
+def test_paper_with_title_and_sections_is_parseable():
+    parsed = {
+        "title": "A Review of Intrusion Detection",
+        "abstract": "",
+        "doi": None,
+        "sections": [
+            {"section": "Introduction", "text": "We study IDS."},
+            {"section": "Method", "text": "Signature rules."},
+        ],
+    }
+    assert is_parseable_paper(parsed, [])

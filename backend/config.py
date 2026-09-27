@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     # which leaves gap analysis empty. This is the only metered OpenAlex call; set it false to
     # stay on free single-record lookups only.
     openalex_title_search: bool = True
+    # SPECTER2 stays on disk. Search and similar-papers use the graph, not this vector.
+    embed_on_ingest: bool = False
     local_user_id: str = "local"
     data_dir: Path = ROOT / "data"
 

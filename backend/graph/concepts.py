@@ -43,8 +43,19 @@ GENERIC_CONCEPTS = frozenset(
         "parallelizable manifold",
         "sentence",
         "speech recognition",
+        "survey",
+        "systematic literature review",
+        "systematic review",
         "task",
         "task (project management)",
+        "case study",
+        "dynamic analysis",
+        "empirical study",
+        "formal verification",
+        "literature review",
+        "penetration testing",
+        "static analysis",
+        "static code analysis",
     }
 )
 

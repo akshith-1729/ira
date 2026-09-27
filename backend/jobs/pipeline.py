@@ -128,19 +128,40 @@ def resolve_bibliography(references: list[dict], deps: Deps) -> list[dict]:
     return records
 
 
+def _usable_title(parsed: dict) -> str:
+    title = (parsed.get("title") or "").strip()
+    if title.lower() in {"", "untitled", "untitled upload"}:
+        return ""
+    return title
+
+
+def looks_scholarly(parsed: dict, bibliography: list) -> bool:
+    """DOI, a real reference list, or several headed sections — not a story PDF."""
+    sections = parsed.get("sections") or []
+    return bool(parsed.get("doi")) or len(bibliography) >= 3 or len(sections) >= 3
+
+
+def is_parseable_paper(parsed: dict, bibliography: list) -> bool:
+    title = _usable_title(parsed)
+    abstract = (parsed.get("abstract") or "").strip()
+    has_body = bool(abstract) or len(parsed.get("sections") or []) >= 2
+    return bool(title and (has_body or looks_scholarly(parsed, bibliography)))
+
+
 def _finish(
     job_id: str,
     record: dict,
     section_chunks_list: list[dict] | None,
     deps: Deps,
     *,
-    embed: bool = True,
+    embed: bool | None = None,
 ) -> None:
     paper_id = record["id"]
     deps.db.update_job(job_id, "running", "embedding", paper_id=paper_id)
     if section_chunks_list:
         deps.store.write_chunks(paper_id, section_chunks_list)
-    if embed or deps.store.graph.get_embedding(paper_id) is None:
+    do_embed = deps.settings.embed_on_ingest if embed is None else embed
+    if do_embed:
         vector = deps.embed(record.get("title") or "", record.get("abstract") or "")
         deps.store.graph.set_embedding(paper_id, vector)
 
@@ -273,6 +294,11 @@ def run_upload(job_id: str, pdf_path, deps: Deps) -> None:
         deps.db.update_job(job_id, "running", "parsing")
         tei = parse_pdf(pdf_path, deps.settings.grobid_url)
         parsed = parse_tei(tei)
+        bibliography = parse_bibliography(tei)
+        if not is_parseable_paper(parsed, bibliography):
+            raise RuntimeError(
+                "GROBID did not find a parseable paper (title plus abstract, sections, or references)."
+            )
         deps.db.update_job(job_id, "running", "metadata")
         record = None
         refs = []
@@ -284,7 +310,12 @@ def run_upload(job_id: str, pdf_path, deps: Deps) -> None:
                 work = deps.openalex.get_work(parsed["doi"])
             except Exception:
                 log.warning("DOI %s was not resolved", parsed.get("doi"))
-        if work is None and deps.settings.openalex_title_search and parsed.get("title"):
+        if (
+            work is None
+            and deps.settings.openalex_title_search
+            and looks_scholarly(parsed, bibliography)
+            and parsed.get("title")
+        ):
             # A published PDF often carries no machine-readable DOI. Matching the title gets
             # the paper its own topics and venue, without which gaps and venue fit are empty.
             try:
@@ -304,7 +335,7 @@ def run_upload(job_id: str, pdf_path, deps: Deps) -> None:
             private = True
         if not refs:
             deps.db.update_job(job_id, "running", "citations")
-            refs = resolve_bibliography(parse_bibliography(tei), deps)
+            refs = resolve_bibliography(bibliography, deps)
         deps.store.upsert_paper(record, private=private, owner=deps.settings.local_user_id if private else None)
         if refs:
             deps.store.upsert_references(record["id"], refs)

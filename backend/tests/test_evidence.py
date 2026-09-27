@@ -7,6 +7,8 @@ def test_generic_openalex_fields_are_not_concepts():
     assert is_generic("Computer science")
     assert is_generic("BLEU")
     assert is_generic("WMT 2014 English-to-German translation task")
+    assert is_generic("literature review")
+    assert is_generic("empirical study")
     assert not is_generic("TransE")
 
 

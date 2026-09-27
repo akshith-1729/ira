@@ -90,6 +90,10 @@ export default function PaperDetail() {
       )}
 
       <Section title="Summary">
+        <p className="mb-3 max-w-3xl text-sm text-mute">
+          Written from this paper&apos;s own text. Citation directions appear only after
+          referenced works were resolved into the graph.
+        </p>
         <p className="max-w-3xl leading-7">{paper.summary || "No summary yet."}</p>
       </Section>
 
@@ -136,6 +140,9 @@ export default function PaperDetail() {
       </Section>
 
       <Section title="Venues from the graph">
+        <p className="mb-3 max-w-3xl text-sm text-mute">
+          Where related ingested papers appeared — not a submission prediction.
+        </p>
         {(paper.recommended_venues || []).length === 0 && (
           <p className="text-mute">No venue is linked to these topics yet.</p>
         )}
