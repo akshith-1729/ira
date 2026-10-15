@@ -1,17 +1,26 @@
 # Ira
 
-Ira is a research assistant for one paper at a time. You sign in, submit a PDF or an OpenAlex, DOI, or arXiv id, and Ira builds a citation graph, a short summary, and a suggestion of where the work could be sent.
+Ira reads one research paper and lays out what that paper actually did, what it left open, and which journals or conferences are a reasonable place to send it.
 
-## What it does
+You start with a paper you already have. Upload the PDF, or paste an OpenAlex id, a DOI, or an arXiv id. Ira pulls the bibliographic record, reads the text it can get, and follows the references far enough to see what the surrounding work is about. The result is a page for that paper, not a general survey of the field.
 
-- Accounts with email confirmation. Leave SMTP blank and the code appears on screen.
-- Paper intake by PDF upload or by OpenAlex, DOI, or arXiv id.
-- A citation graph in Neo4j, with a visual explorer.
-- Search across papers already in the graph and the OpenAlex catalog.
-- A summary and answers about the paper, written by Groq from the stored text.
-- Venue advice for where to send the work, plus a personal library.
+On that page, four things are filled in from the paper itself:
 
-Postgres stores accounts, jobs, and the library. GROBID reads uploaded PDFs. SPECTER2 embeddings stay on CPU and are off unless `EMBED_ON_INGEST=true`.
+**What this paper showed.** A short summary and a list of contributions, written from the paper’s own sections. The wording comes from Groq, and it stays tied to text Ira stored for that paper.
+
+**What’s missing.** Gaps Ira can point at. Some come from claims and limits inside the paper. Others are topics or methods that show up in the papers it cites and do not show up here, with a concrete direction for what to try next. If the reference list could not be read, Ira says so and stays with the paper’s own text.
+
+**Where to send this paper.** A shortlist of venues matched to this paper’s subject, with more options underneath. The match is for this manuscript. It is a suggestion, and acceptance is a separate decision.
+
+**Ask.** A question box. Answers are drawn from this paper’s sections, and each answer points at the passages it used. You can mark an answer up or down.
+
+**Related papers** opens the citation graph: the paper in the middle, the work it cites, and the links Ira stored while reading it.
+
+Search is separate from that page. You type a research question, Ira checks papers already in your graph, and it also looks through the OpenAlex catalog. A result you open can be brought in and read the same way as a paper you submitted yourself.
+
+Your account keeps a library of the papers you have submitted or saved. Register with an email address. If SMTP is set, the confirmation code arrives by mail. If it is left blank, the code is shown on screen so you can still finish signing up. Profile and password live on the account page.
+
+Underneath, Neo4j holds the papers, citations, and topics. Postgres holds accounts, the library, and the job that tracks each upload or lookup while it runs. GROBID turns an uploaded PDF into sections and a reference list. Groq writes the summary, the gap narration, and the answers. SPECTER2 can embed a paper on CPU, and that step stays off unless `EMBED_ON_INGEST=true`. Search uses the graph and OpenAlex, not that embedding.
 
 ## Run
 
