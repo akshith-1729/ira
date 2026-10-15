@@ -1,33 +1,56 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, pollJob } from "../api";
+import PageHero from "../components/PageHero";
+import ResultRow from "../components/ResultRow";
+import SearchField from "../components/SearchField";
 import Thumbs from "../components/Thumbs";
+import Chip from "../components/ui/Chip";
+import Empty from "../components/ui/Empty";
 
 export default function Search() {
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  const [params, setParams] = useSearchParams();
+  const [query, setQuery] = useState(params.get("q") || "");
   const [topic, setTopic] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [payload, setPayload] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [looking, setLooking] = useState("");
+  const lastQuery = useRef("");
 
-  async function submit(event) {
-    event.preventDefault();
+  async function run(nextQuery) {
+    const q = (nextQuery ?? query).trim();
+    if (!q) return;
+    const key = `${q}::${topic.trim()}`;
+    lastQuery.current = key;
     setBusy(true);
     setError("");
+    setPayload(null);
     try {
       const body = await api("/search", {
         method: "POST",
-        body: JSON.stringify({ query, topic: topic.trim() || null }),
+        body: JSON.stringify({ query: q, topic: topic.trim() || null }),
       });
       setPayload(body);
+      if (params.get("q") !== q) setParams({ q }, { replace: true });
     } catch (err) {
+      lastQuery.current = "";
       setError(err.message);
     } finally {
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    const q = params.get("q");
+    if (!q) return;
+    setQuery(q);
+    const key = `${q}::${topic.trim()}`;
+    if (lastQuery.current === key) return;
+    run(q);
+  }, [params]);
 
   async function analyze(openalexId) {
     setLooking(openalexId);
@@ -52,97 +75,97 @@ export default function Search() {
     }
   }
 
-  const local = payload?.results || [];
-  const catalog = payload?.catalog || [];
+  const ranked = payload
+    ? [...(payload.results || []), ...(payload.catalog || [])].sort(
+        (a, b) => (b.relevance || 0) - (a.relevance || 0)
+      )
+    : [];
 
   return (
     <div>
-      <p className="text-xs uppercase tracking-[0.16em] text-teal">Search</p>
-      <h1 className="mt-2 font-serif text-4xl">Ask a research question. The graph and catalog answer with related work, not keyword hits.</h1>
-      <form onSubmit={submit} className="mt-6 flex flex-col gap-3 md:flex-row">
+      <PageHero icon="search" tone="violet" title="Find papers">
+        Ask a research question or paste a title. We skip nonsense, then list papers you already
+        analyzed and public matches.
+      </PageHero>
+
+      <div className="mt-8 rounded-[1.6rem] border border-violet/30 bg-gradient-to-br from-violet/20 via-sky/10 to-panel p-4 shadow-card sm:p-6">
+      <SearchField
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        onSubmit={() => {
+          lastQuery.current = "";
+          run();
+        }}
+        placeholder="Ask a research question"
+        action="Search"
+        busy={busy}
+        disabled={!query.trim()}
+      />
+      </div>
+
+      <button
+        className="mt-3 text-sm text-mute hover:text-cream"
+        type="button"
+        onClick={() => setFilterOpen((open) => !open)}
+      >
+        {filterOpen ? "Hide topic filter" : "Narrow by topic"}
+      </button>
+      {filterOpen && (
         <input
-          className="flex-1 rounded border border-line bg-panel px-3 py-2 text-sm outline-none focus:border-teal"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="new flaws in web 3.0 technology"
-        />
-        <input
-          className="rounded border border-line bg-panel px-3 py-2 text-sm outline-none focus:border-teal md:w-56"
+          className="mt-3 w-full max-w-md rounded-2xl border border-line bg-panel px-4 py-3 text-sm outline-none focus:border-teal"
           value={topic}
           onChange={(event) => setTopic(event.target.value)}
-          placeholder="Topic name or id"
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              lastQuery.current = "";
+              run();
+            }
+          }}
+          placeholder="Optional topic name"
         />
-        <button className="rounded bg-teal px-4 py-2 text-sm text-ink disabled:opacity-50" disabled={busy || !query.trim()}>
-          {busy ? "Reading literature…" : "Search"}
-        </button>
-      </form>
-      {error && <p className="mt-4 text-sm text-amber">{error}</p>}
+      )}
+
+      {error && <p className="mt-6 text-sm text-amber">{error}</p>}
+      {busy && (
+        <div className="mt-10 flex items-center gap-4 rounded-[1.35rem] border border-line bg-panel px-6 py-5">
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-teal" />
+          <p className="font-serif text-2xl">Checking the question, then ranking papers…</p>
+        </div>
+      )}
 
       {payload && (payload.field || payload.intent || payload.brief) && (
-        <section className="mt-8 rounded-lg border border-line bg-panel p-4">
-          <h2 className="text-xs uppercase tracking-[0.16em] text-teal">Related work</h2>
-          {payload.field && <p className="mt-2 text-xs text-mute">{payload.field}</p>}
-          {payload.intent && <p className="mt-1 font-serif text-xl">{payload.intent}</p>}
-          {payload.brief && <p className="mt-3 text-sm leading-6">{payload.brief}</p>}
+        <section className="mt-10 max-w-3xl">
+          {payload.field && <Chip tone="violet">{payload.field}</Chip>}
+          {payload.intent && payload.intent !== query && (
+            <p className="mt-2 font-serif text-3xl leading-snug">{payload.intent}</p>
+          )}
+          {payload.brief && <p className="mt-3 text-[17px] leading-7 text-mute">{payload.brief}</p>}
         </section>
       )}
 
       {payload && (
-        <section className="mt-8">
-          <h2 className="text-xs uppercase tracking-[0.16em] text-teal">In this graph</h2>
-          {local.length === 0 && (
-            <p className="mt-3 text-sm text-mute">
-              Nothing ingested in this field yet. Analyze a catalog paper to put it on the graph.
-            </p>
+        <section className="mt-12">
+          <div className="flex items-end justify-between gap-3">
+            <h2 className="font-serif text-3xl">Papers</h2>
+            <span className="text-sm text-mute">{ranked.length}</span>
+          </div>
+          {ranked.length === 0 && (
+            <div className="mt-4">
+              <Empty icon="search" tone="violet">
+                {payload.brief || "No relevant paper turned up for this question."}
+              </Empty>
+            </div>
           )}
-          <ResultList rows={local} />
-        </section>
-      )}
-
-      {payload && (
-        <section className="mt-8">
-          <h2 className="text-xs uppercase tracking-[0.16em] text-teal">OpenAlex catalog</h2>
-          {catalog.length === 0 && (
-            <p className="mt-3 text-sm text-mute">No additional catalog hits for this query.</p>
-          )}
-          <ResultList rows={catalog} onAnalyze={analyze} looking={looking} />
+          <ul className="mt-6 space-y-4">
+            {ranked.map((row) => (
+              <ResultRow key={row.paper.id} row={row} onAnalyze={analyze} looking={looking} />
+            ))}
+          </ul>
         </section>
       )}
 
       <Thumbs feedbackId={payload?.feedback_id} />
     </div>
-  );
-}
-
-function ResultList({ rows, onAnalyze, looking }) {
-  return (
-    <ul className="mt-3 space-y-3">
-      {rows.map((row) => (
-        <li key={row.paper.id} className="rounded-lg border border-line bg-panel p-4">
-          {row.source === "openalex" ? (
-            <p className="font-serif text-xl">{row.paper.title}</p>
-          ) : (
-            <Link className="font-serif text-xl hover:text-teal" to={`/papers/${encodeURIComponent(row.paper.id)}`}>
-              {row.paper.title}
-            </Link>
-          )}
-          <p className="mt-1 text-xs text-mute">
-            {row.paper.year || "n.d."} · {row.paper.id}
-          </p>
-          {(row.reasons || []).length > 0 && <p className="mt-1 text-xs text-mute">{row.reasons.join(" · ")}</p>}
-          {row.why && <p className="mt-2 text-sm leading-6">{row.why}</p>}
-          {!row.why && row.paper.summary && <p className="mt-2 text-sm text-mute">{row.paper.summary}</p>}
-          {onAnalyze && (
-            <button
-              className="mt-3 rounded border border-line px-3 py-1 text-xs text-teal disabled:opacity-50"
-              disabled={Boolean(looking)}
-              onClick={() => onAnalyze(row.paper.id)}
-            >
-              {looking === row.paper.id ? "Analyzing…" : "Analyze this paper"}
-            </button>
-          )}
-        </li>
-      ))}
-    </ul>
   );
 }

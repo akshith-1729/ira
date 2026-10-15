@@ -79,8 +79,9 @@ class _Store:
     def write_gap(self, paper_id, gap):
         self.written.append(gap)
 
-    def venues_for_topics(self, topics):
-        return [{"id": "S1", "name": "Nature", "source_papers": ["W2"]}]
+    def venues_for_topics(self, topics, *, exclude_id=None):
+        assert exclude_id == "W1"
+        return [{"id": "S1", "name": "Nature", "source_papers": ["Neighbor"], "papers": 1, "topic_hits": 1}]
 
     def link_venue(self, direction_id, venue_id):
         self.venue = venue_id
@@ -105,6 +106,9 @@ class _DB:
 
     def update_job(self, job_id, status, progress, *, paper_id=None, error=None):
         self.states.append((status, progress, paper_id, error))
+
+    def add_to_library(self, user_id, paper_id, *, title, year, private):
+        self.shelf = (user_id, paper_id, title, private)
 
 
 class _LLM:

@@ -105,13 +105,20 @@ FOREACH (k IN $keywords |
 )
 """
 
+# Venues already on the graph. Rank by shared topics, then how many ingested
+# papers appeared there. This is not a submission prediction.
 VENUES_FOR_TOPICS = """
 MATCH (p:Paper)-[:RELATED_TO]->(t:Topic)
-WHERE t.id IN $topics OR t.name IN $topics
+WHERE (t.id IN $topics OR t.name IN $topics)
+  AND ($exclude_id IS NULL OR p.id <> $exclude_id)
 MATCH (p)-[:PUBLISHED_IN]->(v:Venue)
-WITH v, count(DISTINCT p) AS papers, collect(DISTINCT p.id) AS source_papers
-RETURN v.id AS id, v.name AS name, papers, source_papers[..5] AS source_papers
-ORDER BY papers DESC
+WITH v,
+     count(DISTINCT t) AS topic_hits,
+     count(DISTINCT p) AS papers,
+     collect(DISTINCT coalesce(p.title, p.id)) AS titles
+RETURN v.id AS id, v.name AS name, v.kind AS kind,
+       papers, topic_hits, titles[..5] AS source_papers
+ORDER BY topic_hits DESC, papers DESC, v.name
 LIMIT 8
 """
 
@@ -235,6 +242,22 @@ class PaperStore:
                     abstract=abstract,
                 ).consume()
 
+    def delete_private_paper(self, paper_id: str, *, owner: str) -> bool:
+        """Delete one private upload and its own text. Cited papers stay."""
+        query = """
+        MATCH (p:Paper {id: $id})
+        WHERE p:Private AND p.owner_user_id = $owner
+        OPTIONAL MATCH (chunk:Chunk)-[:PART_OF]->(p)
+        OPTIONAL MATCH (p)-[:HAS_GAP]->(g:Gap)
+        OPTIONAL MATCH (g)-[:SUGGESTS]->(d:Direction)
+        OPTIONAL MATCH (c:Claim)-[:SUPPORTED_BY]->(chunk)
+        DETACH DELETE c, d, g, chunk, p
+        RETURN true AS removed
+        """
+        with self.graph.session() as session:
+            row = session.run(query, id=paper_id, owner=owner).single()
+        return row is not None
+
     def upsert_references(self, seed_id: str, records: list[PaperRecord]) -> None:
         for record in records:
             self.upsert_paper(record, private=False, owner=None)
@@ -352,17 +375,19 @@ class PaperStore:
         with self.graph.session() as session:
             link_venue(session, direction_id, venue_id)
 
-    def venues_for_topics(self, topics: list[str]) -> list[dict]:
+    def venues_for_topics(self, topics: list[str], *, exclude_id: str | None = None) -> list[dict]:
         cleaned = [topic for topic in topics if topic]
         if not cleaned:
             return []
         with self.graph.session() as session:
-            rows = session.run(VENUES_FOR_TOPICS, topics=cleaned)
+            rows = session.run(VENUES_FOR_TOPICS, topics=cleaned, exclude_id=exclude_id)
             return [
                 {
                     "id": record["id"],
                     "name": record["name"],
+                    "kind": record.get("kind"),
                     "papers": record["papers"],
+                    "topic_hits": record["topic_hits"],
                     "source_papers": list(record["source_papers"] or []),
                 }
                 for record in rows

@@ -125,20 +125,28 @@ Max 16 items.
 
 
 QUERY_TASK = """
-Turn the user's literature query into a search intent. The words they typed are not
-the topics. Drop fillers (new, modern, flaws, technology, project, research, paper,
-study, system, based). Expand the field into real topics and methods a bibliographic
-index would use.
+Decide if the user's text is a research question or paper title. If it is keysmash,
+gibberish, or has no scholarly field (for example "ding doong"), set valid=false.
 
-catalog_query is at most 5 words and must include the field's own name
-(web 3.0, cybersecurity), not a parent word (technology) and not a method list.
-must_match are synonym phrases that identify the field (web 3.0, web3), never the
-user's problem words (flaws, new, vulnerabilities).
-Do not add knowledge graphs, literature review, information retrieval, or
-evaluation methods unless the user named them.
+If valid, turn it into a search intent. The words they typed are not always the
+topics. Drop fillers (new, modern, flaws, technology, project, research, paper,
+study, system, based). Expand the field into the topics a bibliographic index
+would use for that meaning today.
+
+Use the current research sense unless the user named the old one
+(Web 3.0 → blockchain / smart contracts, not 2009 semantic web / RDF;
+unless they said semantic web).
+
+catalog_query is at most 6 words. It must name the specific problem, not a parent
+word (technology) and not a decade-old homonym. Example: "smart contract
+vulnerability", not only "web 3.0".
+must_match are 1-3 short field names (smart contract, blockchain, transformer),
+never exploit types or parent words.
 
 Return JSON:
-{"field":"short field name",
+{"valid":true,
+ "reason":"",
+ "field":"short field name",
  "intent":"one sentence research question",
  "topics":["..."],
  "methods":["..."],
@@ -173,14 +181,17 @@ The papers below are the only evidence. Write a related-work brief of this set.
 Do not add papers. Do not restate titles as a list. Name methods and claims that
 appear in the abstracts. Say what this set does not cover for the question.
 
-relevant=true if the paper is in the interpreted field, even when it defines the
-field or surveys challenges instead of listing CVEs.
-relevant=false only if the paper is a different field (cell imaging, generic AI
-cybersecurity when the field is Web 3.0, education when the field is Web 3.0).
+relevant=true only if the paper helps answer the interpreted question in the
+current sense of the field (defines it, measures it, or studies the same problem).
+relevant=false if it is a different field, or only an older homonym
+(semantic-web "Web 3.0" when the question is smart contracts; cell imaging;
+generic education when the field is Web 3.0).
 
 Return JSON:
-{{"brief":"4-6 sentences",
- "hits":[{{"id":"must be an id from the list","relevant":true,"why":"this paper's method or claim vs the question"}}]}}
+{{"brief":"3-5 sentences on what this set actually covers",
+ "hits":[{{"id":"must be an id from the list","relevant":true,"score":8,"why":"why this paper belongs, or omit it"}}]}}
+score is 1-10. 8-10 answers the question; 5-7 is the same problem nearby.
+Omit score < 5 and every relevant=false row.
 
 PAPERS:
 {catalog}
@@ -204,4 +215,21 @@ Return JSON:
 
 CITED PAPERS:
 {catalog}
+""".strip()
+
+
+VENUE_GAP_TASK = """
+The leading block is one paper. List submission-blocking gaps in that text only.
+
+Kinds: results, baseline, dataset, scope.
+- results: the method is specified but no measured score is reported
+- baseline: scores are reported but no named comparison appears
+- dataset: a claim is evaluated without naming the corpus
+- scope: the claim is broader than the evidence in the text
+
+Do not invent citations, numbers, or datasets. Do not name venues.
+If the text already reports a score against a named baseline on a named dataset, return no gap of that kind.
+
+Return JSON:
+{"gaps":[{"kind":"results|baseline|dataset|scope","statement":"one sentence","evidence":"short quote from the leading block"}]}
 """.strip()

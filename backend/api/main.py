@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ai.llm import LLM
+from api.accounts import router as accounts_router
 from api.routes import router
 from config import get_settings
 from graph.driver import Graph
@@ -13,6 +14,8 @@ from ingestion.openalex import OpenAlex
 from jobs.db import Database
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 @asynccontextmanager
@@ -38,7 +41,9 @@ app = FastAPI(title="Research Assistant", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 app.include_router(router)
+app.include_router(accounts_router)

@@ -53,8 +53,8 @@ def main(target: str) -> int:
         print("   direction:", gap["direction"])
         for claim in gap["claims"]:
             print("   claim:", claim["text"], "->", claim["section"])
-    print("\nVENUES:", [venue["name"] for venue in paper["recommended_venues"]])
-    print("SIMILAR:", [row["paper"]["title"] for row in paper["recommended_papers"]])
+    advice = paper.get("venue_advice") or {}
+    print("\nVENUES:", [venue["name"] for venue in (advice.get("shortlist") or [])])
     return 0
 
 

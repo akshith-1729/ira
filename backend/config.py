@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     embed_on_ingest: bool = False
     local_user_id: str = "local"
     data_dir: Path = ROOT / "data"
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
 
 
 @lru_cache

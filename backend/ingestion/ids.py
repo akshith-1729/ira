@@ -8,13 +8,13 @@ def classify_id(raw: str) -> tuple[str, str]:
     text = raw.strip()
     lowered = text.lower()
     if "search=" in lowered or text.startswith("?"):
-        raise ValueError("Pass an OpenAlex id, DOI, or arXiv id. Keyword search is not used.")
+        raise ValueError("Use a DOI, arXiv number, or paper id. A search phrase won’t work here.")
 
     if "openalex.org/" in lowered:
         wid = text.split("openalex.org/")[-1].split("/")[0].split("?")[0]
         if re.fullmatch(r"W\d+", wid):
             return "openalex", wid
-        raise ValueError(f"Unsupported OpenAlex id: {wid}")
+        raise ValueError("That paper id is not valid.")
 
     if re.fullmatch(r"W\d+", text):
         return "openalex", text
@@ -34,4 +34,4 @@ def classify_id(raw: str) -> tuple[str, str]:
     if match:
         return "arxiv", match.group(1)
 
-    raise ValueError("Pass an OpenAlex work id (W…), a DOI, or an arXiv id.")
+    raise ValueError("Use a DOI, arXiv number, or paper id.")

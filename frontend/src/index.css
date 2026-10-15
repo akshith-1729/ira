@@ -2,19 +2,120 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --ink: 247 244 237;
+  --panel: 255 252 246;
+  --lift: 236 230 218;
+  --line: 214 206 192;
+  --cream: 28 26 23;
+  --mute: 110 102 92;
+  --accent: 14 122 96;
+  --amber: 196 98 18;
+  --rose: 190 62 78;
+  --violet: 108 72 214;
+  --sky: 28 122 196;
+  --lime: 46 140 72;
+}
+
+html.dark {
+  color-scheme: dark;
+  --ink: 9 10 13;
+  --panel: 18 20 27;
+  --lift: 26 29 38;
+  --line: 44 49 64;
+  --cream: 244 239 230;
+  --mute: 143 138 130;
+  --accent: 94 214 176;
+  --amber: 244 176 84;
+  --rose: 244 128 140;
+  --violet: 186 160 255;
+  --sky: 126 196 255;
+  --lime: 150 220 140;
+}
+
 html,
 body,
 #root {
   height: 100%;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
-  background: #0c0d10;
-  color: #eceae4;
+  background:
+    radial-gradient(820px 420px at -5% -10%, rgb(var(--violet) / 0.22), transparent 55%),
+    radial-gradient(720px 380px at 105% -5%, rgb(var(--amber) / 0.2), transparent 52%),
+    radial-gradient(640px 360px at 90% 110%, rgb(var(--sky) / 0.16), transparent 50%),
+    radial-gradient(520px 280px at 8% 100%, rgb(var(--accent) / 0.12), transparent 46%),
+    rgb(var(--ink));
+  color: rgb(var(--cream));
+  transition: background 0.45s ease, color 0.45s ease;
 }
 
 ::selection {
-  background: #3dbea5;
-  color: #0c0d10;
+  background: rgb(var(--accent));
+  color: rgb(var(--ink));
+}
+
+input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  border: 1px solid rgb(var(--line));
+  border-radius: 999px;
+  background: rgb(var(--lift));
+  color: rgb(var(--cream));
+  padding: 0.35rem 0.8rem;
+  font-size: 0.75rem;
+}
+
+.fg-tooltip {
+  font-family: "IBM Plex Sans", sans-serif;
+}
+
+.field {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.field:focus {
+  border-color: rgb(var(--accent));
+  box-shadow: 0 0 0 4px rgb(var(--accent) / 0.16);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.5s ease both;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pop {
+  animation: pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes ira-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

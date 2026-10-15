@@ -1,11 +1,13 @@
-const base = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const base =
+  import.meta.env.VITE_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8000`;
 
 export async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (options.body && !(options.body instanceof FormData) && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }
-  const response = await fetch(`${base}${path}`, { ...options, headers });
+  const response = await fetch(`${base}${path}`, { ...options, headers, credentials: "include" });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const detail = data.detail;

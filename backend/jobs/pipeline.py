@@ -39,6 +39,21 @@ class Deps:
     db: Database
     llm: LLM
     embed: Callable[[str, str], list[float]]
+    user_id: str = ""
+    private: bool = False
+
+
+def _actor(deps: Deps) -> str:
+    return deps.user_id or deps.settings.local_user_id
+
+
+def _year(value) -> int | None:
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _normalize_section(name: str) -> str:
@@ -221,16 +236,26 @@ def _finish(
             narrative = {"gaps": []}
         for gap in bind_gaps(diff, narrative, paper_id):
             deps.store.write_gap(paper_id, gap)
-            venues = deps.store.venues_for_topics([gap["topic_id"], gap["topic_name"]])
+            venues = deps.store.venues_for_topics(
+                [gap["topic_id"], gap["topic_name"]],
+                exclude_id=paper_id,
+            )
             if venues:
                 deps.store.link_venue(gap["direction_id"], venues[0]["id"])
+    deps.db.add_to_library(
+        _actor(deps),
+        paper_id,
+        title=record.get("title") or paper_id,
+        year=_year(record.get("year")),
+        private=deps.private,
+    )
     deps.db.update_job(job_id, "done", "done", paper_id=paper_id)
 
 
 def refresh_generation(job_id: str, paper_id: str, deps: Deps) -> None:
     """Rewrite summary and gaps for a paper that is already in the graph."""
     try:
-        paper = deps.store.get_paper(paper_id, owner=deps.settings.local_user_id)
+        paper = deps.store.get_paper(paper_id, owner=_actor(deps))
         if paper is None:
             raise RuntimeError(f"Paper {paper_id} was not found")
         record = {
@@ -297,7 +322,7 @@ def run_upload(job_id: str, pdf_path, deps: Deps) -> None:
         bibliography = parse_bibliography(tei)
         if not is_parseable_paper(parsed, bibliography):
             raise RuntimeError(
-                "GROBID did not find a parseable paper (title plus abstract, sections, or references)."
+                "We could not read a paper from that PDF (need a title plus an abstract, sections, or references)."
             )
         deps.db.update_job(job_id, "running", "metadata")
         record = None
@@ -336,11 +361,12 @@ def run_upload(job_id: str, pdf_path, deps: Deps) -> None:
         if not refs:
             deps.db.update_job(job_id, "running", "citations")
             refs = resolve_bibliography(bibliography, deps)
-        deps.store.upsert_paper(record, private=private, owner=deps.settings.local_user_id if private else None)
+        deps.store.upsert_paper(record, private=private, owner=_actor(deps) if private else None)
         if refs:
             deps.store.upsert_references(record["id"], refs)
         for neighbor in related:
             deps.store.upsert_paper(neighbor, private=False, owner=None)
+        deps.private = private
         _finish(job_id, record, section_chunks(record["id"], parsed), deps)
     except Exception as exc:
         log.exception("Upload failed")

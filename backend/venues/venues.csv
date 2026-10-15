@@ -1,0 +1,28 @@
+id,name,kind,tier,fields,sjr,sjr_quartile,avg_review_days,acceptance_rate,acceptance_year,acceptance_source,homepage,publisher,scopus,open_access
+neurips,NeurIPS,conference,top,machine learning,,,100,0.26,2023,NeurIPS 2023 public blog,https://neurips.cc,NeurIPS,unknown,yes
+icml,ICML,conference,top,machine learning,,,90,0.28,2023,ICML 2023 public stats,https://icml.cc,IMLS,unknown,yes
+iclr,ICLR,conference,top,machine learning,,,90,0.31,2024,ICLR 2024 public blog,https://iclr.cc,ICLR,unknown,yes
+aaai,AAAI,conference,strong,artificial intelligence,,,90,0.24,2024,AAAI 2024 public stats,https://aaai.org/conference/aaai/,AAAI,unknown,unknown
+jmlr,Journal of Machine Learning Research,journal,top,machine learning,2.1,Q1,150,,,Scimago SJR 2023,https://www.jmlr.org,Microtome,yes,yes
+tmlr,Transactions on Machine Learning Research,journal,strong,machine learning,,,75,,,TMLR process documentation,https://jmlr.org/tmlr/,JMLR,unknown,yes
+tacl,Transactions of the Association for Computational Linguistics,journal,strong,natural language processing,1.8,Q1,120,,,Scimago SJR 2023,https://transacl.org,MIT Press,yes,yes
+acl,ACL,conference,top,natural language processing,,,90,0.25,2023,ACL 2023 handbook,https://www.aclweb.org,ACL,unknown,yes
+emnlp,EMNLP,conference,top,natural language processing,,,90,0.22,2023,EMNLP 2023 public stats,https://www.aclweb.org,ACL,unknown,yes
+naacl,NAACL,conference,strong,natural language processing,,,90,,,,https://naacl.org,ACL,unknown,yes
+cvpr,CVPR,conference,top,computer vision,,,100,0.23,2023,CVPR 2023 public stats,https://cvpr.thecvf.com,IEEE / CVF,unknown,unknown
+iccv,ICCV,conference,top,computer vision,,,100,,,,https://iccv.thecvf.com,IEEE / CVF,unknown,unknown
+eccv,ECCV,conference,top,computer vision,,,100,,,,https://eccv.ecva.net,Springer,unknown,unknown
+kdd,KDD,conference,top,data mining,,,90,0.20,2023,KDD 2023 public stats,https://www.kdd.org,ACM,unknown,unknown
+www,The Web Conference,conference,strong,information retrieval;web,,,90,,,,https://www.thewebconf.org,IW3C2,unknown,unknown
+sigir,SIGIR,conference,strong,information retrieval,,,90,,,,https://sigir.org,ACM,unknown,unknown
+ieee-sp,IEEE Symposium on Security and Privacy,conference,top,security,,,120,0.12,2023,IEEE S&P 2023 public stats,https://www.ieee-security.org/TC/SP-Index.html,IEEE,unknown,unknown
+usenix-sec,USENIX Security,conference,top,security,,,120,0.19,2023,USENIX Security 2023 public stats,https://www.usenix.org/conferences/usenix-security,USENIX,unknown,yes
+ccs,ACM CCS,conference,top,security,,,110,,,,https://www.sigsac.org/ccs.html,ACM,unknown,unknown
+ndss,NDSS,conference,strong,security,,,110,,,,https://www.ndss-symposium.org,Internet Society,unknown,yes
+icse,ICSE,conference,top,software engineering,,,120,,,,https://conf.researchr.org/series/icse,IEEE / ACM,unknown,unknown
+chi,CHI,conference,top,human-computer interaction,,,100,0.27,2023,CHI 2023 public stats,https://chi.acm.org,ACM,unknown,unknown
+vldb,VLDB,conference,top,databases,,,90,,,,https://www.vldb.org,VLDB Endowment,unknown,yes
+tpami,IEEE Transactions on Pattern Analysis and Machine Intelligence,journal,top,computer vision;machine learning,6.0,Q1,180,,,Scimago SJR 2023,https://www.computer.org/csdl/journal/tp,IEEE,yes,no
+nature,Nature,journal,top,multidisciplinary,18.0,Q1,150,0.08,2023,Nature journal metrics,https://www.nature.com,Nature Portfolio,yes,no
+pnas,PNAS,journal,strong,multidisciplinary,3.7,Q1,120,,,Scimago SJR 2023,https://www.pnas.org,National Academy of Sciences,yes,unknown
+arxiv,arXiv,repository,specialist,preprint,,,0,,,not a peer-reviewed venue,https://arxiv.org,Cornell Tech,no,yes

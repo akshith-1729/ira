@@ -207,21 +207,22 @@ class OpenAlex:
             return None
         return found
 
-    def search_works(self, query: str, limit: int = 5) -> list[dict]:
+    def search_works(self, query: str, limit: int = 5, *, title: bool = False) -> list[dict]:
         """Metered list call. Used only by the search page, never by citation walking."""
         if not self.api_key:
             raise RuntimeError("OPENALEX_API_KEY is required for OpenAlex lookups")
         cleaned = " ".join((query or "").split())[:200]
         if len(cleaned) < 4:
             return []
-        response = self._client.get(
-            "https://api.openalex.org/works",
-            params={
-                "search": cleaned,
-                "per_page": min(max(limit, 1), 8),
-                "api_key": self.api_key,
-            },
-        )
+        params = {
+            "per_page": min(max(limit, 1), 8),
+            "api_key": self.api_key,
+        }
+        if title:
+            params["filter"] = f"title.search:{cleaned}"
+        else:
+            params["search"] = cleaned
+        response = self._client.get("https://api.openalex.org/works", params=params)
         if response.is_error:
             raise RuntimeError(f"OpenAlex search returned {response.status_code}")
         records = []
